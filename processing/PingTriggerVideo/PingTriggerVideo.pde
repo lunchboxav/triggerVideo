@@ -7,22 +7,30 @@ int val;      // Data received from the serial port
 Movie movie1, movie2;
 
 boolean isToggled = false;
-boolean mFinished = false;
+boolean mFinished = true;
 
 void setup() 
 {
   size(640, 360);
-  for (int i = 0; i < Serial.list().length; i++) {
+  //size(1280, 720);
+  for (int i = 0; i < Serial.list ().length; i++) {
     println(Serial.list()[i]);
   }
-  String portName = Serial.list()[3];
+  String portName = Serial.list()[1];
   myPort = new Serial(this, portName, 9600);
 
-  movie1 = new Movie(this, "ronaldinho.mp4");
-  movie2 = new Movie(this, "roadtrip.mp4");
+  movie1 = new Movie (this, "movie1.mp4");
+  movie2 = new Movie (this, "movie2.mp4") {
+    @ Override public void eosEvent() {
+      super.eosEvent();
+      myEos();
+    }
+  };
 
   movie1.loop();
   movie2.stop();
+  
+  frameRate(30);
 }
 
 void movieEvent(Movie m) { 
@@ -30,13 +38,11 @@ void movieEvent(Movie m) {
 } 
 
 void draw() {
-  if (isToggled && !mFinished) {
-    movie1.stop();
-    movie2.loop();
+  if (isToggled || !mFinished) {
+    movie2.play();
     image (movie2, 0, 0);
-    if (movie2.time() == movie2.duration()) {
-      mFinished = true;
-    }
+    mFinished = false;
+    movie1.stop();
   } else if (!isToggled && mFinished) {
     movie2.stop();
     movie1.loop();
@@ -46,11 +52,13 @@ void draw() {
 
 void serialEvent (Serial myPort) {
   int inByte = myPort.read();
-  //println(inByte);
-
   if (inByte == 1) {
     isToggled = true;
   } else {
     isToggled = false;
   }
+}
+
+void myEos() {
+  mFinished = true;
 }
